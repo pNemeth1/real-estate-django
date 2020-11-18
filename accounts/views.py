@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
-from django.contrib import messages
+from django.contrib import messages, auth
 
 # Django has a Usermodel built in!
-from django.contrib.auth.models import User, auth
+from django.contrib.auth.models import User
 
-from django.contrib.auth import authenticate, login, logout
+from contacts.models import Contact
+
 
 # Create your views here.
 def register(request):
@@ -37,7 +38,7 @@ def register(request):
                     # return redirect('index')
                     user.save()
                     messages.success(request, 'You are now registered and can log in!')
-                    return redirect(login)
+                    return redirect(login_view)
 
 
             
@@ -62,16 +63,21 @@ def login_view(request):
         else:
             # Return an 'invalid login' error message.
             messages.error(request, 'Invalid username or password')
-            return redirect(login)
+            return redirect(login_view)
 
         
     else:
         return render(request, 'accounts/login.html')
 
 def logout_view(request):
-    logout(request)
-    messages.success(request, 'You are now Logged Out')
+    auth.logout(request)
+    messages.info(request, 'You are now Logged Out')
     return redirect('index')
 
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    user_contacts = Contact.objects.order_by('-contact_date').filter(user_id=request.user.id)
+
+    context = {
+        'contacts': user_contacts
+    }
+    return render(request, 'accounts/dashboard.html', context)
